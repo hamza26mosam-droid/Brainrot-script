@@ -1,0 +1,125 @@
+-- Trade Control UI & Logic | Single Script
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local me = Players.LocalPlayer
+
+-- إنشاء أو جلب الـ Remotes تلقائياً
+local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+if not remotes and game:GetService("RunService"):IsServer() then
+    remotes = Instance.new("Folder")
+    remotes.Name = "Remotes"
+    remotes.Parent = ReplicatedStorage
+end
+
+-- واجهة المستخدم (UI)
+local gui = Instance.new("ScreenGui")
+gui.Name = "TradeControl"
+gui.ResetOnSpawn = false
+gui.Parent = me:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(330, 350)
+frame.Position = UDim2.new(0.5, -165, 0.5, -175)
+frame.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
+frame.Parent = gui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+local function makeButton(text, y)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -20, 0, 40)
+    b.Position = UDim2.fromOffset(10, y)
+    b.BackgroundColor3 = Color3.fromRGB(45, 49, 65)
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.TextScaled = true
+    b.Font = Enum.Font.GothamBold
+    b.Text = text
+    b.Parent = frame
+    Instance.new("UICorner", b)
+    return b
+end
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "GAME TRADE SYSTEM"
+title.TextColor3 = Color3.fromRGB(70, 190, 255)
+title.TextScaled = true
+title.Parent = frame
+
+local targetBox = Instance.new("TextBox")
+targetBox.Size = UDim2.new(1, -20, 0, 40)
+targetBox.Position = UDim2.fromOffset(10, 45)
+targetBox.PlaceholderText = "Target Username..."
+targetBox.Text = ""
+targetBox.TextScaled = true
+targetBox.Font = Enum.Font.Gotham
+targetBox.BackgroundColor3 = Color3.fromRGB(30, 33, 45)
+targetBox.TextColor3 = Color3.new(1, 1, 1)
+targetBox.Parent = frame
+Instance.new("UICorner", targetBox)
+
+local autoReady = false
+local autoAccept = false
+local frozen = false
+local selectedPlayer = nil
+
+local selectBtn = makeButton("Select Target", 95)
+local readyBtn = makeButton("Auto Ready: OFF", 145)
+local acceptBtn = makeButton("Auto Accept: OFF", 195)
+local freezeBtn = makeButton("Freeze Trade: OFF", 245)
+
+-- اختيار اللاعب وتأكيده
+selectBtn.MouseButton1Click:Connect(function()
+    selectedPlayer = nil
+    local text = targetBox.Text:lower()
+    
+    if text ~= "" then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= me and (p.Name:lower():sub(1, #text) == text or p.DisplayName:lower():sub(1, #text) == text) then
+                selectedPlayer = p
+                break
+            end
+        end
+    end
+
+    if selectedPlayer then
+        selectBtn.Text = "Target: " .. selectedPlayer.Name
+        selectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+    else
+        selectBtn.Text = "Player Not Found!"
+        selectBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
+
+readyBtn.MouseButton1Click:Connect(function()
+    autoReady = not autoReady
+    readyBtn.Text = "Auto Ready: " .. (autoReady and "ON" or "OFF")
+    readyBtn.BackgroundColor3 = autoReady and Color3.fromRGB(40, 160, 80) or Color3.fromRGB(45, 49, 65)
+end)
+
+acceptBtn.MouseButton1Click:Connect(function()
+    autoAccept = not autoAccept
+    acceptBtn.Text = "Auto Accept: " .. (autoAccept and "ON" or "OFF")
+    acceptBtn.BackgroundColor3 = autoAccept and Color3.fromRGB(40, 160, 80) or Color3.fromRGB(45, 49, 65)
+end)
+
+freezeBtn.MouseButton1Click:Connect(function()
+    frozen = not frozen
+    freezeBtn.Text = "Freeze Trade: " .. (frozen and "ON" or "OFF")
+    freezeBtn.BackgroundColor3 = frozen and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(45, 49, 65)
+end)
+
+-- حلقة التشغيل المباشر
+task.spawn(function()
+    while task.wait(0.5) do
+        if selectedPlayer and not frozen then
+            if autoReady then
+                print("[UI] Auto Ready active for: " .. selectedPlayer.Name)
+            end
+            if autoAccept then
+                print("[UI] Auto Accept active for: " .. selectedPlayer.Name)
+            end
+        end
+    end
+end)
